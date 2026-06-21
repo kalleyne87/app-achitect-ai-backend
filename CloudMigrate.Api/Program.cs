@@ -1,3 +1,6 @@
+using CloudMigrate.Business.Services;
+using CloudMigrate.Business.Services.Interface;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -5,6 +8,8 @@ builder.Services.AddControllers();
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<IAssessmentService, AssessmentService>();
 
 var app = builder.Build();
 

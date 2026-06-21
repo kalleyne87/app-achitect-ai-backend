@@ -11,4 +11,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\CloudMigrate.DomainObjects\CloudMigrate.DomainObjects.csproj" />
+    <ProjectReference Include="..\CloudMigrate.Business\CloudMigrate.Business.csproj" />
+  </ItemGroup>
+
 </Project>
