@@ -13,11 +13,9 @@ namespace CloudMigrate.Api.Controllers
     {
         
         [HttpPost]
-        public IActionResult CreateAssessment([FromBody] AssessmentRequest request)
+        public async Task<IActionResult> CreateAssessment([FromBody] AssessmentRequest request)
         {
-
-            var response = _assessmentService.GenerateAssessment(request);
-
+            var response = await _assessmentService.GenerateAssessment(request);
             return Ok(response);
         }
     }

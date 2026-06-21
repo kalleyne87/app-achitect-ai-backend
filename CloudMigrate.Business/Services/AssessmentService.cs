@@ -1,51 +1,57 @@
 using System.Collections.Generic;
+using Azure;
+using Azure.AI.OpenAI;
 using CloudMigrate.Business.Services.Interface;
 using CloudMigrate.DomainObjects.DTOs;
+using Microsoft.Extensions.Options;
+using OpenAI.Chat;
 
 namespace CloudMigrate.Business.Services
 {
     public class AssessmentService : IAssessmentService
     {
-        public Task<AssessmentResponse> GenerateAssessment(AssessmentRequest request)
+        private readonly AzureOpenAIOptions _options;
+
+        public AssessmentService(IOptions<AzureOpenAIOptions> options)
         {
-            // Placeholder implementation - replace with actual logic to generate assessment
-            var response = new AssessmentResponse
+            _options = options.Value;
+        }
+
+        public async Task<AssessmentResponse> GenerateAssessment(AssessmentRequest request)
+        {
+            var client = new AzureOpenAIClient(
+                new Uri(_options.Endpoint),
+                new AzureKeyCredential(_options.ApiKey));
+
+            var chatClient = client.GetChatClient(_options.DeploymentName);
+
+            var messages = new List<ChatMessage>
             {
-                // Todo: Implement actual assessment logic based on the request data
-                ExecutiveSummary = $" appears to be a candidate for Azure modernization.",
-                RecommendedServices = new List<string>
-                {
-                    "Azure App Service",
-                    "Azure SQL Database",
-                    "Azure Blob Storage",
-                    "Azure Key Vault",
-                    "Application Insights"
-                },
-            
-                Risks = new Risk
-                {
-                    Mitigation = "Move runtime dependencies into Azure-managed services.",
-                    Impact = "May limit scalability and cloud migration readiness.",
-                    Severity = "Medium",
-                    Recommendation = "Move runtime dependencies into Azure-managed services."
-                },
-                Tradeoffs = new List<string>
-                {
-                    "Discovery and dependency analysis",
-                    "Provision Azure landing zone",
-                    "Migrate database and application",
-                    "Validate performance, security, and monitoring"
-                },
-                Roadmap = new List<string>
-                {
-                    "Discovery and dependency analysis",
-                    "Provision Azure landing zone",
-                    "Migrate database and application",
-                    "Validate performance, security, and monitoring"
-                }
+                ChatMessage.CreateSystemMessage(
+                    """
+                    Hello my name is KB.
+                    Analyze requirements and provide:
+                    - Executive Summary
+                    - Recommended Azure Services
+                    - Risks
+                    - Tradeoffs
+                    """
+                ),
+                
+                ChatMessage.CreateUserMessage(request.Requirements)
             };
 
-            return Task.FromResult(response);
+            var response = await chatClient.CompleteChatAsync(messages);
+
+            return new AssessmentResponse
+            {
+                ExecutiveSummary = response.Value.Content[0].Text,
+
+                // We'll make these structured later
+                RecommendedServices = new List<string>(),
+                Risks = new Risk(),
+                Tradeoffs = new List<string>()
+            };
         }
     }
 }

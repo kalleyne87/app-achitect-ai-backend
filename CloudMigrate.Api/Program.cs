@@ -1,5 +1,6 @@
 using CloudMigrate.Business.Services;
 using CloudMigrate.Business.Services.Interface;
+using CloudMigrate.DomainObjects.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,10 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IAssessmentService, AssessmentService>();
 
+// Configure Azure OpenAI options
+builder.Services.Configure<AzureOpenAIOptions>(
+    builder.Configuration.GetSection("AzureOpenAI"));
+    
 var app = builder.Build();
 
 // Swagger UI
