@@ -10,6 +10,6 @@ namespace CloudMigrate.DomainObjects.DBOs
         public string RisksJson { get; set; } = "";
         public string TradeoffsJson { get; set; } = "";
         public string RoadmapJson { get; set; } = "";
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDateTime { get; set; } = DateTime.UtcNow;
     }
 }
