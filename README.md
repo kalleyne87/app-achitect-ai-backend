@@ -1,6 +1,6 @@
 # ArchitectAI — Backend API
 
-> An intelligent, multi-turn application assessment platform that guides users from an app idea to a full architecture recommendation — defaults to Azure recommendations, but will suggest other technologies and platforms when they're the better fit. Powered by Azure OpenAI and built on a distributed .NET backend.
+> An intelligent, multi-turn application assessment platform that guides users from an app idea to a full architecture recommendation that defaults to Azure recommendations, but will suggest other technologies and platforms when they're the better fit. Powered by Azure OpenAI and built on a distributed .NET backend.
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Azure OpenAI](https://img.shields.io/badge/Azure%20OpenAI-GPT--4o-0078D4?logo=microsoft-azure)](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
@@ -12,7 +12,7 @@
 
 ## What It Does
 
-ArchitectAI takes a user's app idea and — through a guided, multi-turn AI conversation — produces a complete architectural assessment. Rather than returning a generic answer to a vague prompt, the system validates whether it has enough context before generating a recommendation. If not, it asks targeted follow-up questions until the information is sufficient.
+ArchitectAI takes a user's app idea and, through a guided, multi-turn AI conversation it produces a complete architectural assessment. Rather than returning a generic answer to a vague prompt, the system validates whether it has enough context before generating a recommendation. If not, it asks targeted follow-up questions until the information is sufficient.
 
 Recommendations default to Azure, but the system will suggest other technologies and platforms when they're the better fit for the user's needs.
 
@@ -67,13 +67,13 @@ Recommendations default to Azure, but the system will suggest other technologies
 ### Key Architectural Decisions
 
 **Multi-turn validation before generation**
-Rather than generating an assessment from a single prompt, the system calls Azure OpenAI to validate whether the user's input is sufficient. If not, it returns targeted questions. This loop continues until readiness is confirmed — at which point the consolidated prompt is passed to a final generation call. This avoids low-quality output from vague inputs.
+Rather than generating an assessment from a single prompt, the system calls Azure OpenAI to validate whether the user's input is sufficient. If not, it returns targeted questions. This loop continues until readiness is confirmed, at which point the consolidated prompt is passed to a final generation call. This avoids low-quality output from vague inputs.
 
 **Asynchronous processing via Azure Service Bus**
-Assessment generation is compute-heavy and involves multiple OpenAI calls. Rather than blocking the HTTP response, the API enqueues the request to an Azure Service Bus queue and returns immediately. An Azure Function consumes the queue message and handles the full generation pipeline — keeping the API responsive and the processing decoupled.
+Assessment generation is compute-heavy and involves multiple OpenAI calls. Rather than blocking the HTTP response, the API enqueues the request to an Azure Service Bus queue and returns immediately. An Azure Function consumes the queue message and handles the full generation pipeline and keeping the API responsive and the processing decoupled.
 
 **Cosmos DB for session persistence**
-The multi-turn conversation state (`AssessmentSession`) — including the original request, all collected Q&A, status, and the consolidated prompt — is persisted in Azure Cosmos DB. This allows sessions to survive across requests and supports future features like session resumption and history retrieval.
+The multi-turn conversation state (`AssessmentSession`) — including the original request, all collected Q&A, status, and the consolidated prompt is persisted in Azure Cosmos DB. This allows sessions to survive across requests and supports future features like session resumption and history retrieval.
 
 **Layered .NET solution with clean separation**
 The solution follows a three-project structure: `Api` (controllers, routing), `Business` (services, data access, AutoMapper, EF migrations), and `DomainObjects` (DTOs and DBOs). This keeps the domain model independent of infrastructure concerns and makes each layer independently testable.
@@ -256,6 +256,6 @@ API will be available at `https://localhost:5001`.
 
 ## About
 
-Built as a portfolio project to demonstrate Staff-level distributed systems design. The architecture intentionally explores real-world patterns — async messaging, multi-turn AI context management, and a clean layered .NET API — rather than a simple request/response AI wrapper. Defaults to Azure recommendations but suggests whatever platform and technology best fits the user's needs.
+Built as a portfolio project to demonstrate Staff-level distributed systems design. The architecture intentionally explores real-world patterns, async messaging, multi-turn AI context management, and a clean layered .NET API rather than a simple request/response AI wrapper. Defaults to Azure recommendations but suggests whatever platform and technology best fits the user's needs.
 
 **Related:** [app-assessment-ui](https://github.com/kalleyne87/app-assessment-ui) — Angular 19 frontend with NgRx Signal Store
