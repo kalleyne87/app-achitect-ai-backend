@@ -24,7 +24,7 @@ Recommendations default to Azure, but the system will suggest other technologies
 - Risk analysis
 - Implementation roadmap
 
-**Frontend repo:** [app-assessment-ui](https://github.com/kalleyne87/app-assessment-ui)
+**Frontend repo:** [app-architect-ai-ui](https://github.com/kalleyne87/app-architect-ai-ui)
 
 ---
 
@@ -33,7 +33,7 @@ Recommendations default to Azure, but the system will suggest other technologies
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Angular 22 UI                            │
-│                    (app-assessment-ui)                          │
+│                    (app-architect-ai-ui)                          │
 └───────────────────────────┬─────────────────────────────────────┘
                             │ HTTP (REST)
                             ▼
@@ -217,14 +217,14 @@ Copy `appsettings.example.json` to `appsettings.Development.json` and fill in yo
 ### Run Locally
 
 ```bash
-git clone https://github.com/kalleyne87/app-assessment-backend.git
+git clone https://github.com/kalleyne87/app-architect-ai-backend.git
 cd app-assessment-backend
 dotnet restore
 dotnet ef database update --project ArchitectAI.Business
 dotnet run --project ArchitectAI.Api
 ```
 
-API will be available at `https://localhost:5001`.
+API will be available at `http://localhost:5197`.
 
 ---
 
@@ -258,4 +258,4 @@ API will be available at `https://localhost:5001`.
 
 Built as a portfolio project to demonstrate Staff-level distributed systems design. The architecture intentionally explores real-world patterns, async messaging, multi-turn AI context management, and a clean layered .NET API rather than a simple request/response AI wrapper. Defaults to Azure recommendations but suggests whatever platform and technology best fits the user's needs.
 
-**Related:** [app-assessment-ui](https://github.com/kalleyne87/app-assessment-ui) — Angular 19 frontend with NgRx Signal Store
+**Related:** [app-architect-ai-ui](https://github.com/kalleyne87/app-architect-ai-ui) — Angular 19 frontend with NgRx Signal Store
