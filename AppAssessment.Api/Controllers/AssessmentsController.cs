@@ -34,5 +34,23 @@ namespace AppAssessment.Api.Controllers
             var response = await _assessmentService.GenerateAssessment(request);
             return Ok(response);
         }
+
+        [HttpPost("answers")]
+        public async Task<IActionResult> SubmitAnswers([FromBody] SubmitAnswersRequest request)
+        {
+            try
+            {
+                var response = await _assessmentService.SubmitAnswers(request);
+                return Ok(response);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }
