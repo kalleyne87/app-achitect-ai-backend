@@ -38,13 +38,13 @@ Recommendations default to Azure, but the system will suggest other technologies
                             │ HTTP (REST)
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                   AppAssessment.Api (.NET 10)                   │
+│                   ArchitectAI.Api (.NET 10)                   │
 │              Azure App Service — REST Controllers               │
 └──────┬──────────────────────────────────────────┬──────────────┘
        │ Service Layer                            │ Enqueue Request
        ▼                                          ▼
 ┌─────────────────────┐              ┌────────────────────────────┐
-│ AppAssessment       │              │    Azure Service Bus        │
+│ ArchitectAI       │              │    Azure Service Bus        │
 │ .Business           │              │    (Assessment Queue)       │
 │                     │              └────────────┬───────────────┘
 │ • AssessmentService │                           │ Consume
@@ -84,15 +84,15 @@ The solution follows a three-project structure: `Api` (controllers, routing), `B
 
 ```
 app-assessment-backend/
-├── AppAssessment.Api/              # Controllers, middleware, DI registration
-├── AppAssessment.Business/
+├── ArchitectAI.Api/              # Controllers, middleware, DI registration
+├── ArchitectAI.Business/
 │   ├── Data/                       # DbContext, Cosmos DB configuration
 │   ├── Mappers/                    # AutoMapper profiles (DBO ↔ DTO)
 │   ├── Migrations/                 # EF Core schema migrations
 │   └── Services/
 │       ├── Interface/              # IAssessmentService contract
 │       └── AssessmentService.cs    # Core business logic
-└── AppAssessment.DomainObjects/
+└── ArchitectAI.DomainObjects/
     ├── DBOs/                       # Database objects (AssessmentSession, Assessment)
     └── DTOs/                       # API request/response contracts
 ```
@@ -220,8 +220,8 @@ Copy `appsettings.example.json` to `appsettings.Development.json` and fill in yo
 git clone https://github.com/kalleyne87/app-assessment-backend.git
 cd app-assessment-backend
 dotnet restore
-dotnet ef database update --project AppAssessment.Business
-dotnet run --project AppAssessment.Api
+dotnet ef database update --project ArchitectAI.Business
+dotnet run --project ArchitectAI.Api
 ```
 
 API will be available at `https://localhost:5001`.
