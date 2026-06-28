@@ -1,16 +1,34 @@
+using Newtonsoft.Json;
 
 namespace ArchitectAI.DomainObjects.DBOs
 {
     public class AssessmentSession
     {
-        public int Id { get; set; }
+        [JsonProperty("id")]
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+
+        [JsonProperty("originalRequest")]
         public string OriginalRequest { get; set; } = "";
-        public string CollectedQuestionsAndAnswersJson { get; set; } = "[]";
+
+        [JsonProperty("collectedQuestionsAndAnswers")]
+        public List<QuestionAnswer> CollectedQuestionsAndAnswers { get; set; } = new();
+
+        [JsonProperty("currentQuestions")]
+        public List<string> CurrentQuestions { get; set; } = new();
+
+        [JsonProperty("consolidatedPrompt")]
         public string? ConsolidatedPrompt { get; set; }
-        public string CurrentQuestionsJson { get; set; } = "";
+
+        [JsonProperty("finalAssessment")]
+        public Assessment? FinalAssessment { get; set; }
+
+        [JsonProperty("status")]
         public string Status { get; set; } = "NeedsMoreInformation";
-        public string? FinalAssessmentJson { get; set; }
+
+        [JsonProperty("createdDateTime")]
         public DateTime CreatedDateTime { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedDateTime { get; set; }
+
+        [JsonProperty("updatedDateTime")]
+        public DateTime UpdatedDateTime { get; set; } = DateTime.UtcNow;
     }
 }

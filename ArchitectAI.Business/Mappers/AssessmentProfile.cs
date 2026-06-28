@@ -10,30 +10,18 @@ public class AssessmentProfile : Profile
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     public AssessmentProfile()
     {
+        // Assessment to AssessmentResponse
         CreateMap<Assessment, AssessmentResponse>()
+            .ForMember(dest => dest.ExecutiveSummary,
+                opt => opt.MapFrom(src => src.ExecutiveSummary))
             .ForMember(dest => dest.RecommendedServices,
-                opt => opt.MapFrom(src =>
-                    JsonSerializer.Deserialize<List<string>>(src.RecommendedServicesJson, _jsonOptions) ?? new()))
+                opt => opt.MapFrom(src => src.RecommendedServices))
             .ForMember(dest => dest.Risks,
-                opt => opt.MapFrom(src =>
-                    JsonSerializer.Deserialize<List<string>>(src.RisksJson, _jsonOptions) ?? new()))
+                opt => opt.MapFrom(src => src.Risks))
             .ForMember(dest => dest.Tradeoffs,
-                opt => opt.MapFrom(src =>
-                    JsonSerializer.Deserialize<List<string>>(src.TradeoffsJson, _jsonOptions) ?? new()))
+                opt => opt.MapFrom(src => src.Tradeoffs))
             .ForMember(dest => dest.Roadmap,
-                opt => opt.MapFrom(src =>
-                    JsonSerializer.Deserialize<List<string>>(src.RoadmapJson, _jsonOptions) ?? new()));
-
-        CreateMap<AssessmentResponse, Assessment>()
-            .ForMember(dest => dest.RecommendedServicesJson,
-                opt => opt.MapFrom(src => JsonSerializer.Serialize(src.RecommendedServices)))
-            .ForMember(dest => dest.RisksJson,
-                opt => opt.MapFrom(src => JsonSerializer.Serialize(src.Risks)))
-            .ForMember(dest => dest.TradeoffsJson,
-                opt => opt.MapFrom(src => JsonSerializer.Serialize(src.Tradeoffs)))
-            .ForMember(dest => dest.RoadmapJson,
-                opt => opt.MapFrom(src => JsonSerializer.Serialize(src.Roadmap)))
-            .ForMember(dest => dest.Id,        opt => opt.Ignore())
-            .ForMember(dest => dest.CreatedDateTime, opt => opt.Ignore());
+                opt => opt.MapFrom(src => src.Roadmap));
+        
     }
 }

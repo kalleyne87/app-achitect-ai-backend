@@ -1,10 +1,8 @@
-using ArchitectAI.Business.Data;
 using ArchitectAI.Business.Mappers;
 using ArchitectAI.Business.Services;
 using ArchitectAI.Business.Services.Interface;
 using ArchitectAI.DomainObjects.DTOs;
 using AspNetCoreRateLimit;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,14 +13,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IAssessmentService, AssessmentService>();
+builder.Services.AddSingleton<ICosmosDbService, CosmosDbService>();
 
 // Configure Azure OpenAI options
 builder.Services.Configure<AzureOpenAIOptions>(
     builder.Configuration.GetSection("AzureOpenAI"));
 
-// Configure SQL Server options
-builder.Services.AddDbContext<SqlDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.Configure<CosmosDbOptions>(
+    builder.Configuration.GetSection(CosmosDbOptions.SectionName));
 
 // AutoMapper configuration
 builder.Services.AddAutoMapper(typeof(AssessmentProfile));
