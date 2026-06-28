@@ -15,10 +15,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IAssessmentService, AssessmentService>();
+builder.Services.AddSingleton<ICosmosDbService, CosmosDbService>();
 
 // Configure Azure OpenAI options
 builder.Services.Configure<AzureOpenAIOptions>(
     builder.Configuration.GetSection("AzureOpenAI"));
+
+builder.Services.Configure<CosmosDbOptions>(
+    builder.Configuration.GetSection(CosmosDbOptions.SectionName));
 
 // Configure SQL Server options
 builder.Services.AddDbContext<SqlDbContext>(options =>
