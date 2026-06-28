@@ -229,25 +229,39 @@ namespace ArchitectAI.Business.Services
                 
                 ChatMessage.CreateSystemMessage(
                     $"""
-                    You are a Principal Azure Cloud Architect conducting a requirements review.
-                    Your job is to decide whether the information provided is detailed enough to
-                    produce an accurate, Azure-focused architecture recommendation.
- 
+                    You are a friendly assistant helping someone plan a software system.
+                    Your job is to decide whether you have enough information to produce
+                    a solid architecture recommendation for them.
+
                     {priorQuestionsBlock}
- 
+
                     Return ONLY valid JSON — no markdown, no commentary — in this exact shape:
-                    
+
                     {assessmentReadinessJson}
- 
+
                     Rules:
-                    - Set isReadyForAssessment to true only when you are confident you can
-                      produce a meaningful recommendation without guessing on major points.
+                    - Be generous in your assessment. If the user has described a recognisable
+                    system type (e.g. messaging app, e-commerce platform, ride-sharing service),
+                    that alone is often enough to produce a solid recommendation.
+                    - Set isReadyForAssessment to true unless critical information is genuinely
+                    missing and would significantly change the architecture decisions.
                     - When true, missingInformationAreas and nextQuestions must be empty arrays.
-                    - When false, ask 3–5 NEW, specific follow-up questions that materially
-                      affect the architecture (e.g. scale, compliance, budget, existing systems).
+                    - When false, ask a MAXIMUM of 3 questions — only the ones that would most
+                    change the recommendation. Do not ask nice-to-have questions.
+                    - Across the entire conversation, never ask more than 10 questions total.
+                    If {previousQA.Count} questions have already been asked, be strongly biased
+                    toward isReadyForAssessment = true.
                     - Do NOT repeat any previously asked question.
-                    - Write questions in plain, friendly language a non-technical person understands.
+                    - Write every question as if you are talking to a business owner, not an engineer.
+                    Avoid ALL technical terms — no mention of APIs, databases, latency, SLAs,
+                    CDNs, OAuth, WebRTC, encryption protocols, or infrastructure terms.
+                    - Each question must be one plain sentence a 10-year-old could understand.
+                    - Good example: "How many people do you expect to use this at the same time?"
+                    - Bad example: "What are your peak concurrent user targets and SLA requirements?"
+                    - Good example: "Do you need people to be able to use this on their phone?"
+                    - Bad example: "Which client platforms and form factors must be supported?"
                     """
+
                 ),
  
                 ChatMessage.CreateUserMessage(consolidatedPrompt)
