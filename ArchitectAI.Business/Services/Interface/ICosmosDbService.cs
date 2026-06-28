@@ -5,13 +5,13 @@ namespace ArchitectAI.Business.Services.Interface
     public interface ICosmosDbService
     {
         // Sessions
-        Task<AssessmentSessionDocument> CreateSessionAsync(AssessmentSessionDocument session);
-        Task<AssessmentSessionDocument?> GetSessionAsync(string id);
-        Task<AssessmentSessionDocument> UpdateSessionAsync(AssessmentSessionDocument session);
+        Task<AssessmentSession> CreateSessionAsync(AssessmentSession session);
+        Task<AssessmentSession?> GetSessionAsync(string id);
+        Task<AssessmentSession> UpdateSessionAsync(AssessmentSession session);
 
         // Assessments
-        Task<AssessmentDocument> CreateAssessmentAsync(AssessmentDocument assessment);
-        Task<List<AssessmentDocument>> GetAssessmentsAsync();
-        Task<AssessmentDocument?> GetAssessmentAsync(string id);
+        Task<Assessment> CreateAssessmentAsync(Assessment assessment);
+        Task<List<Assessment>> GetAssessmentsAsync();
+        Task<Assessment?> GetAssessmentAsync(string id);
     }
 }

@@ -1,14 +1,7 @@
-using System.Text.Json;
-using AutoMapper;
-using Azure;
-using Azure.AI.OpenAI;
-using ArchitectAI.Business.Data;
 using ArchitectAI.Business.Services.Interface;
 using ArchitectAI.DomainObjects.DBOs;
 using ArchitectAI.DomainObjects.DTOs;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using OpenAI.Chat;
 using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Cosmos;
 
@@ -41,18 +34,18 @@ namespace ArchitectAI.Business.Services
             _assessmentsContainer = database.GetContainer(opt.AssessmentsContainer);
         }
 
-        public async Task<AssessmentSessionDocument> CreateSessionAsync(AssessmentSessionDocument session)
+        public async Task<AssessmentSession> CreateSessionAsync(AssessmentSession session)
         {
             _logger.LogInformation("Creating Cosmos session {Id}", session.Id);
             var response = await _sessionsContainer.CreateItemAsync(session, new PartitionKey(session.Id));
             return response.Resource;
         }
 
-        public async Task<AssessmentSessionDocument?> GetSessionAsync(string id)
+        public async Task<AssessmentSession?> GetSessionAsync(string id)
         {
             try
             {
-                var response = await _sessionsContainer.ReadItemAsync<AssessmentSessionDocument>(
+                var response = await _sessionsContainer.ReadItemAsync<AssessmentSession>(
                     id, new PartitionKey(id));
                 return response.Resource;
             }
@@ -63,7 +56,7 @@ namespace ArchitectAI.Business.Services
             }
         }
 
-        public async Task<AssessmentSessionDocument> UpdateSessionAsync(AssessmentSessionDocument session)
+        public async Task<AssessmentSession> UpdateSessionAsync(AssessmentSession session)
         {
             session.UpdatedDateTime = DateTime.UtcNow;
             _logger.LogInformation("Updating Cosmos session {Id}", session.Id);
@@ -71,7 +64,7 @@ namespace ArchitectAI.Business.Services
             return response.Resource;
         }
 
-        public async Task<AssessmentDocument> CreateAssessmentAsync(AssessmentDocument assessment)
+        public async Task<Assessment> CreateAssessmentAsync(Assessment assessment)
         {
             _logger.LogInformation("Creating Cosmos assessment {Id}", assessment.Id);
             var response = await _assessmentsContainer.CreateItemAsync(
@@ -79,11 +72,11 @@ namespace ArchitectAI.Business.Services
             return response.Resource;
         }
 
-        public async Task<List<AssessmentDocument>> GetAssessmentsAsync()
+        public async Task<List<Assessment>> GetAssessmentsAsync()
         {
-            var query    = _assessmentsContainer.GetItemQueryIterator<AssessmentDocument>(
+            var query    = _assessmentsContainer.GetItemQueryIterator<Assessment>(
                 "SELECT * FROM c ORDER BY c.createdDateTime DESC");
-            var results  = new List<AssessmentDocument>();
+            var results  = new List<Assessment>();
 
             while (query.HasMoreResults)
             {
@@ -94,11 +87,11 @@ namespace ArchitectAI.Business.Services
             return results;
         }
 
-        public async Task<AssessmentDocument?> GetAssessmentAsync(string id)
+        public async Task<Assessment?> GetAssessmentAsync(string id)
         {
             try
             {
-                var response = await _assessmentsContainer.ReadItemAsync<AssessmentDocument>(
+                var response = await _assessmentsContainer.ReadItemAsync<Assessment>(
                     id, new PartitionKey(id));
                 return response.Resource;
             }

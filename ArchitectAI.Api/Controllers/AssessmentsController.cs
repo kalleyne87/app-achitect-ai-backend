@@ -18,7 +18,7 @@ namespace ArchitectAI.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetAssessmentById(int id)
+        public async Task<IActionResult> GetAssessmentById(string id)
         {
             var assessment = await _assessmentService.GetAssessmentById(id);
 

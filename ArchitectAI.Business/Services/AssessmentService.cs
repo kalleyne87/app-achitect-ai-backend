@@ -32,7 +32,7 @@ namespace ArchitectAI.Business.Services
             _mapper   = mapper;
             _logger   = logger;
         }
-        
+
         public async Task<List<AssessmentResponse>> GetAssessments()
         {
             try
@@ -78,12 +78,12 @@ namespace ArchitectAI.Business.Services
             }
         }
 
-        public async Task<AssessmentSessionDocument> CreateAssessmentSession(AssessmentRequest request)
+        public async Task<AssessmentSession> CreateAssessmentSession(AssessmentRequest request)
         {
-            var session = new AssessmentSessionDocument
+            var session = new AssessmentSession
             {
                 OriginalRequest = request.Requirements,
-                CollectedQuestionsAndAnswers = new List<QuestionAnswerDocument>(),
+                CollectedQuestionsAndAnswers = new List<QuestionAnswer>(),
                 CurrentQuestions = new List<string>(),
                 Status = "NeedsMoreInformation",
                 CreatedDateTime = DateTime.UtcNow,
@@ -106,7 +106,7 @@ namespace ArchitectAI.Business.Services
             {
                 var readiness = await ValidateAssessmentRequest(
                     request.Requirements,
-                    new List<QuestionAnswerDocument>());
+                    new List<QuestionAnswer>());
 
                 await UpdateAssessmentSession(session, readiness);
 
@@ -144,11 +144,11 @@ namespace ArchitectAI.Business.Services
             try
             {
                 // Append new answers to the existing Q&A log
-                var newEntries = request.Answers.Select(a => new QuestionAnswerDocument
+                var newEntries = request.Answers.Select(a => new QuestionAnswer
                 {
                     Question   = a.Question,
                     Answer     = a.Answer,
-                    AnsweredAt = DateTime.UtcNow
+                    CreatedDateTime = DateTime.UtcNow
                 }).ToList();
 
                 session.CollectedQuestionsAndAnswers.AddRange(newEntries);
@@ -189,9 +189,7 @@ namespace ArchitectAI.Business.Services
             }
         }
 
-        public async Task UpdateAssessmentSession(
-            AssessmentSessionDocument   session,
-            AssessmentReadinessResponse readiness)
+        public async Task UpdateAssessmentSession(AssessmentSession session, AssessmentReadinessResponse readiness)
         {
             session.CurrentQuestions = readiness.NextQuestions;
             session.Status = readiness.IsReadyForAssessment
@@ -203,7 +201,7 @@ namespace ArchitectAI.Business.Services
                 session.Id, session.Status);
         }
 
-        private async Task MarkSessionFailed(AssessmentSessionDocument session)
+        private async Task MarkSessionFailed(AssessmentSession session)
         {
             try
             {
@@ -216,12 +214,12 @@ namespace ArchitectAI.Business.Services
             }
         }
 
-        private async Task<AssessmentSessionResponse> FinalizeSession(AssessmentSessionDocument session, string promptToUse)
+        private async Task<AssessmentSessionResponse> FinalizeSession(AssessmentSession session, string promptToUse)
         {
             var finalAssessment = await GenerateFinalAssessment(promptToUse);
 
             // Embed the assessment inside the session document
-            session.FinalAssessment = new AssessmentDocument
+            session.FinalAssessment = new Assessment
             {
                 Requirements = session.OriginalRequest,
                 ExecutiveSummary = finalAssessment.ExecutiveSummary,
@@ -263,23 +261,23 @@ namespace ArchitectAI.Business.Services
 
         public async Task PersistFinalAssessment(AssessmentResponse response, string originalRequest, string sessionId)
         {
-            var doc = new AssessmentDocument
+            var doc = new Assessment
             {
-                Requirements        = originalRequest,
-                ExecutiveSummary    = response.ExecutiveSummary,
+                Requirements = originalRequest,
+                ExecutiveSummary = response.ExecutiveSummary,
                 RecommendedServices = response.RecommendedServices,
-                Risks               = response.Risks,
-                Tradeoffs           = response.Tradeoffs,
-                Roadmap             = response.Roadmap,
-                SessionId           = sessionId,
-                CreatedDateTime     = DateTime.UtcNow
+                Risks = response.Risks,
+                Tradeoffs = response.Tradeoffs,
+                Roadmap = response.Roadmap,
+                SessionId = sessionId,
+                CreatedDateTime = DateTime.UtcNow
             };
 
             await _cosmosDbService.CreateAssessmentAsync(doc);
             _logger.LogInformation("Persisted Assessment to Cosmos for session {Id}.", sessionId);
         }
 
-        public async Task<AssessmentReadinessResponse> ValidateAssessmentRequest(string consolidatedPrompt, List<QuestionAnswerDocument> previousQA)
+        public async Task<AssessmentReadinessResponse> ValidateAssessmentRequest(string consolidatedPrompt, List<QuestionAnswer> previousQA)
         {
             _logger.LogInformation("ValidateAssessmentRequest — prompt length: {Len}",
                 consolidatedPrompt.Length);
@@ -347,7 +345,7 @@ namespace ArchitectAI.Business.Services
                 ?? throw new InvalidOperationException("AI returned an invalid readiness response.");
         }
 
-        public async Task<string> BuildConsolidatedPrompt(string originalRequest, List<QuestionAnswerDocument> qa)
+        public async Task<string> BuildConsolidatedPrompt(string originalRequest, List<QuestionAnswer> qa)
         {
             _logger.LogInformation("BuildConsolidatedPrompt — Q&A pairs: {Count}", qa.Count);
 
