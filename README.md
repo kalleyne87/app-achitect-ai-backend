@@ -1,25 +1,22 @@
 # ArchitectAI — Backend API
 
-> An intelligent, multi-turn application assessment platform that guides users from an app idea to a full architecture recommendation that defaults to Azure recommendations, but will suggest other technologies and platforms when they're the better fit. Powered by Azure OpenAI and built on a distributed .NET backend.
+> An intelligent, multi-turn system design assessment platform that guides users from an app idea to a full architecture recommendation. Defaults to Azure but recommends whatever platform best fits the user's needs. Powered by Azure OpenAI (GPT-4o) and built on a .NET 10 backend.
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Azure OpenAI](https://img.shields.io/badge/Azure%20OpenAI-GPT--4o-0078D4?logo=microsoft-azure)](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
 [![Cosmos DB](https://img.shields.io/badge/Azure%20Cosmos%20DB-NoSQL-0078D4?logo=microsoft-azure)](https://azure.microsoft.com/en-us/products/cosmos-db)
-[![Service Bus](https://img.shields.io/badge/Azure%20Service%20Bus-Messaging-0078D4?logo=microsoft-azure)](https://azure.microsoft.com/en-us/products/service-bus)
-[![App Service](https://img.shields.io/badge/Azure%20App%20Service-Hosted-0078D4?logo=microsoft-azure)](https://azure.microsoft.com/en-us/products/app-service)
 
 ---
 
 ## What It Does
 
-ArchitectAI takes a user's app idea and, through a guided, multi-turn AI conversation it produces a complete architectural assessment. Rather than returning a generic answer to a vague prompt, the system validates whether it has enough context before generating a recommendation. If not, it asks targeted follow-up questions until the information is sufficient.
+ArchitectAI takes a user's app idea and, through a guided multi-turn AI conversation, produces a complete architectural assessment. Rather than returning a generic answer to a vague prompt, the system validates whether it has enough context before generating a recommendation. If not, it asks plain-language follow-up questions until the information is sufficient — no technical knowledge required from the user.
 
-Recommendations default to Azure, but the system will suggest other technologies and platforms when they're the better fit for the user's needs.
+Recommendations default to Azure, but the system will suggest other technologies and platforms when they're the better fit.
 
 **The output includes:**
 - Executive summary
 - Recommended services and technologies
-- System requirements
 - Architectural tradeoffs
 - Risk analysis
 - Implementation roadmap
@@ -33,68 +30,39 @@ Recommendations default to Azure, but the system will suggest other technologies
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Angular 22 UI                            │
-│                    (app-architect-ai-ui)                          │
+│              NgRx Signal Store · Standalone Components          │
 └───────────────────────────┬─────────────────────────────────────┘
-                            │ HTTP (REST)
+                            │ HTTP (REST) + X-Api-Key header
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                   ArchitectAI.Api (.NET 10)                   │
-│              Azure App Service — REST Controllers               │
-└──────┬──────────────────────────────────────────┬──────────────┘
-       │ Service Layer                            │ Enqueue Request
-       ▼                                          ▼
-┌─────────────────────┐              ┌────────────────────────────┐
-│ ArchitectAI       │              │    Azure Service Bus        │
-│ .Business           │              │    (Assessment Queue)       │
-│                     │              └────────────┬───────────────┘
-│ • AssessmentService │                           │ Consume
-│ • Validation Logic  │              ┌────────────▼───────────────┐
-│ • Prompt Builder    │              │    Azure Functions          │
-│ • AutoMapper        │              │    (Queue Consumer)         │
-└──────┬──────────────┘              └────────────┬───────────────┘
-       │                                          │
-       ▼                                          ▼
-┌─────────────────────┐              ┌────────────────────────────┐
-│   Azure Cosmos DB   │              │     Azure OpenAI            │
-│   (NoSQL)           │◄─────────────│     (GPT-4o)               │
-│                     │   Persist    │                             │
-│ • AssessmentSession │              │ • Validate readiness        │
-│ • Assessment        │              │ • Generate questions        │
-└─────────────────────┘              │ • Build final assessment    │
-                                     └────────────────────────────┘
-```
-
-### Key Architectural Decisions
-
-**Multi-turn validation before generation**
-Rather than generating an assessment from a single prompt, the system calls Azure OpenAI to validate whether the user's input is sufficient. If not, it returns targeted questions. This loop continues until readiness is confirmed, at which point the consolidated prompt is passed to a final generation call. This avoids low-quality output from vague inputs.
-
-**Asynchronous processing via Azure Service Bus**
-Assessment generation is compute-heavy and involves multiple OpenAI calls. Rather than blocking the HTTP response, the API enqueues the request to an Azure Service Bus queue and returns immediately. An Azure Function consumes the queue message and handles the full generation pipeline and keeping the API responsive and the processing decoupled.
-
-**Cosmos DB for session persistence**
-The multi-turn conversation state (`AssessmentSession`) — including the original request, all collected Q&A, status, and the consolidated prompt is persisted in Azure Cosmos DB. This allows sessions to survive across requests and supports future features like session resumption and history retrieval.
-
-**Layered .NET solution with clean separation**
-The solution follows a three-project structure: `Api` (controllers, routing), `Business` (services, data access, AutoMapper, EF migrations), and `DomainObjects` (DTOs and DBOs). This keeps the domain model independent of infrastructure concerns and makes each layer independently testable.
-
----
-
-## Solution Structure
-
-```
-app-assessment-backend/
-├── ArchitectAI.Api/              # Controllers, middleware, DI registration
-├── ArchitectAI.Business/
-│   ├── Data/                       # DbContext, Cosmos DB configuration
-│   ├── Mappers/                    # AutoMapper profiles (DBO ↔ DTO)
-│   ├── Migrations/                 # EF Core schema migrations
-│   └── Services/
-│       ├── Interface/              # IAssessmentService contract
-│       └── AssessmentService.cs    # Core business logic
-└── ArchitectAI.DomainObjects/
-    ├── DBOs/                       # Database objects (AssessmentSession, Assessment)
-    └── DTOs/                       # API request/response contracts
+│                   ArchitectAI.Api (.NET 10)                     │
+│         ASP.NET Core Web API · Rate Limiting · API Key Auth     │
+└──────┬──────────────────────────────────────────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   ArchitectAI.Business                          │
+│                                                                 │
+│  AssessmentService                                              │
+│  ├── ValidateAssessmentRequest()   — AI readiness check         │
+│  ├── BuildConsolidatedPrompt()     — merge original + Q&A       │
+│  ├── GenerateFinalAssessment()     — produce recommendation     │
+│  └── PersistFinalAssessment()      — save to Cosmos DB          │
+│                                                                 │
+│  CosmosDbService                                                │
+│  ├── Sessions container            — full conversation state    │
+│  └── Assessments container         — completed results          │
+└──────┬──────────────────────────────────────────────────────────┘
+       │                              │
+       ▼                              ▼
+┌─────────────────────┐   ┌──────────────────────────────────────┐
+│   Azure Cosmos DB   │   │          Azure OpenAI (GPT-4o)       │
+│                     │   │                                      │
+│  Sessions           │   │  • Validate request readiness        │
+│  Assessments        │   │  • Generate follow-up questions      │
+└─────────────────────┘   │  • Build consolidated prompt         │
+                          │  • Generate final assessment         │
+                          └──────────────────────────────────────┘
 ```
 
 ---
@@ -105,30 +73,38 @@ app-assessment-backend/
 User submits app idea
         │
         ▼
-CreateAssessmentSession()
+CreateAssessmentSession() — persisted to Cosmos immediately
         │
         ▼
-ValidateAssessmentRequest()  ──── Insufficient? ──► Return questions to user
-        │                                                      │
-    Sufficient?                                     User submits answers
-        │                                                      │
-        ▼                                           SubmitAnswers()
-BuildConsolidatedPrompt()  ◄───────────────────────────────────┘
+ValidateAssessmentRequest()
         │
-        ▼
-GenerateFinalAssessment()
+        ├── Not enough info? ──► Return probing questions (max 3 per round)
+        │                                   │
+        │                        User submits answers
+        │                                   │
+        │                        SubmitAnswers()
+        │                                   │
+        │                        Append Q&A to session
+        │                                   │
+        │                        BuildConsolidatedPrompt()
+        │                                   │
+        │                        ValidateAssessmentRequest() ◄── loop until ready
         │
-        ▼
-PersistFinalAssessment()
-        │
-        ▼
-Return AssessmentResponse
-  • Executive Summary
-  • Recommended Services
-  • Requirements
-  • Tradeoffs
-  • Risks
-  • Roadmap
+        └── Enough info? ──►
+                │
+                ▼
+        GenerateFinalAssessment()
+                │
+                ▼
+        PersistFinalAssessment()   — saved to Assessments + embedded in Session
+                │
+                ▼
+        Return AssessmentSessionResponse
+          • Executive Summary
+          • Recommended Services
+          • Tradeoffs
+          • Risks
+          • Roadmap
 ```
 
 ---
@@ -140,29 +116,92 @@ Tracks the full lifecycle of a user's conversation with the AI.
 
 | Field | Type | Description |
 |---|---|---|
-| `Id` | int | Primary key |
-| `OriginalRequest` | string | The user's initial app idea |
-| `Status` | string | `NeedsMoreInformation` \| `ReadyForAssessment` \| `Complete` |
-| `CurrentQuestionsJson` | JSON | Questions currently awaiting user answers |
-| `CollectedQuestionsAndAnswersJson` | JSON | Full Q&A history for the session |
-| `ConsolidatedPrompt` | string | The final enriched prompt sent to OpenAI |
-| `FinalAssessmentJson` | JSON | The persisted assessment result |
-| `CreatedDateTime` | DateTime | Session creation timestamp |
-| `UpdatedDateTime` | DateTime? | Last update timestamp |
+| `id` | string (GUID) | Cosmos partition key |
+| `originalRequest` | string | The user's initial app idea |
+| `status` | string | `NeedsMoreInformation` · `ReadyForAssessment` · `Completed` · `Failed` |
+| `currentQuestions` | string[] | Questions currently awaiting user answers |
+| `collectedQuestionsAndAnswers` | object[] | Full Q&A history for the session |
+| `consolidatedPrompt` | string | Merged prompt sent to OpenAI for final generation |
+| `finalAssessment` | object | Embedded assessment result (also persisted separately) |
+| `createdDateTime` | DateTime | Session creation timestamp |
+| `updatedDateTime` | DateTime | Last update timestamp |
 
 ### Assessment
 The final persisted output returned to the user.
 
 | Field | Type | Description |
 |---|---|---|
-| `Id` | int | Primary key |
-| `ExecutiveSummary` | string | High-level summary of the recommendation |
-| `Requirements` | string | Identified system requirements |
-| `RecommendedServicesJson` | JSON | List of recommended Azure/tech services |
-| `TradeoffsJson` | JSON | Architectural tradeoffs |
-| `RisksJson` | JSON | Identified risks |
-| `RoadmapJson` | JSON | Implementation roadmap steps |
-| `CreatedDateTime` | DateTime | Assessment creation timestamp |
+| `id` | string (GUID) | Cosmos partition key |
+| `requirements` | string | Original user request |
+| `executiveSummary` | string | High-level summary of the recommendation |
+| `recommendedServices` | string[] | Recommended services with plain-English descriptions |
+| `tradeoffs` | string[] | Architectural tradeoffs |
+| `risks` | string[] | Business-framed risks |
+| `roadmap` | string[] | Step-by-step implementation plan |
+| `sessionId` | string | Reference back to the originating session |
+| `createdDateTime` | DateTime | Assessment creation timestamp |
+
+---
+
+## Solution Structure
+```
+app-architect-ai-backend/
+├── ArchitectAI.Api/
+│   ├── Controllers/
+│   │   └── AssessmentsController.cs   # All REST endpoints
+│   └── Program.cs                     # DI, middleware, rate limiting, API key auth
+│
+├── ArchitectAI.Business/
+│   ├── Mappers/
+│   │   └── AssessmentProfile.cs       # AutoMapper DBO ↔ DTO
+│   ├── Options/
+│   │   ├── AzureOpenAIOptions.cs
+│   │   └── CosmosDbOptions.cs
+│   └── Services/
+│       ├── Interface/
+│       │   ├── IAssessmentService.cs
+│       │   └── ICosmosDbService.cs
+│       ├── AssessmentService.cs       # Core business + AI logic
+│       └── CosmosDbService.cs         # Cosmos DB read/write
+│
+└── ArchitectAI.DomainObjects/
+    ├── DBOs/
+    │   └── CosmosDocuments.cs         # AssessmentSessionDocument, AssessmentDocument
+    └── DTOs/
+        ├── AssessmentRequest.cs
+        ├── AssessmentResponse.cs
+        ├── AssessmentSessionResponse.cs
+        ├── AssessmentReadinessResponse.cs
+        ├── SubmitAnswersRequest.cs
+        └── SessionSummaryResponse.cs
+```
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/assessments` | All completed assessments |
+| `GET` | `/api/assessments/{id}` | Single assessment by ID |
+| `POST` | `/api/assessments` | Start a new assessment session |
+| `POST` | `/api/assessments/answers` | Submit answers to follow-up questions |
+| `GET` | `/api/assessments/sessions` | All sessions (for sidebar history) |
+| `GET` | `/api/assessments/sessions/{id}` | Full session with Q&A transcript |
+
+All endpoints require the `X-Api-Key` header.
+
+---
+
+## Security
+
+**API key authentication** — all `/api/assessments` routes require an `X-Api-Key` header matching the value in `appsettings.json`. This prevents unauthorised use of the Azure OpenAI endpoint.
+
+**Rate limiting** — powered by `AspNetCoreRateLimit`:
+- `POST /api/assessments` — 5 requests per minute per IP
+- `POST /api/assessments/answers` — 10 requests per minute per IP
+
+**Azure spending cap** — set a monthly budget alert in Azure Cost Management and a token quota on your OpenAI deployment as a hard backstop.
 
 ---
 
@@ -173,12 +212,9 @@ The final persisted output returned to the user.
 | Runtime | .NET 10 |
 | API | ASP.NET Core Web API |
 | AI | Azure OpenAI (GPT-4o) |
-| Database | Azure Cosmos DB (NoSQL) |
-| Messaging | Azure Service Bus |
-| Background Processing | Azure Functions |
-| ORM / Migrations | Entity Framework Core |
+| Database | Azure Cosmos DB for NoSQL (Serverless) |
 | Object Mapping | AutoMapper |
-| Hosting | Azure App Service |
+| Rate Limiting | AspNetCoreRateLimit |
 
 ---
 
@@ -186,14 +222,12 @@ The final persisted output returned to the user.
 
 ### Prerequisites
 - .NET 10 SDK
-- Azure subscription (or [Azure free account](https://azure.microsoft.com/free/))
 - Azure OpenAI resource with a GPT-4o deployment
-- Azure Cosmos DB account (free tier available)
-- Azure Service Bus namespace (Basic tier)
+- Azure Cosmos DB account (free serverless tier works)
 
 ### Configuration
 
-Copy `appsettings.example.json` to `appsettings.Development.json` and fill in your values:
+Copy `appsettings.example.json` to `appsettings.Development.json`:
 
 ```json
 {
@@ -202,14 +236,15 @@ Copy `appsettings.example.json` to `appsettings.Development.json` and fill in yo
     "ApiKey": "<your-key>",
     "DeploymentName": "gpt-4o"
   },
-  "CosmosDB": {
-    "ConnectionString": "<your-connection-string>",
-    "DatabaseName": "ArchitectAI",
-    "ContainerName": "Assessments"
+  "CosmosDb": {
+    "Endpoint": "https://<your-account>.documents.azure.com:443/",
+    "Key": "<your-primary-key>",
+    "DatabaseName": "AppArchitectAIDb",
+    "SessionsContainer": "Sessions",
+    "AssessmentsContainer": "Assessments"
   },
-  "ServiceBus": {
-    "ConnectionString": "<your-connection-string>",
-    "QueueName": "assessment-queue"
+  "ApiSettings": {
+    "AppArchitectAIKey2026": "<your-shared-secret>"
   }
 }
 ```
@@ -218,44 +253,34 @@ Copy `appsettings.example.json` to `appsettings.Development.json` and fill in yo
 
 ```bash
 git clone https://github.com/kalleyne87/app-architect-ai-backend.git
-cd app-assessment-backend
+cd app-architect-ai-backend
 dotnet restore
-dotnet ef database update --project ArchitectAI.Business
 dotnet run --project ArchitectAI.Api
 ```
 
-API will be available at `http://localhost:5197`.
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/assessments` | Retrieve all completed assessments |
-| `GET` | `/api/assessments/{id}` | Retrieve a specific assessment |
-| `POST` | `/api/assessments` | Create a new assessment session |
-| `POST` | `/api/assessments/answer` | Submit answers to follow-up questions |
+API runs at `http://localhost:5197`.  
+Swagger UI available at `http://localhost:5197/swagger` in development.
 
 ---
 
 ## Roadmap
 
-- [x] Multi-turn AI conversation flow
-- [x] Assessment session persistence
+- [x] Multi-turn AI conversation with readiness validation
+- [x] Plain-language follow-up questions (non-technical user friendly)
+- [x] Session persistence in Azure Cosmos DB
 - [x] Final assessment generation and storage
-- [x] AutoMapper DTO/DBO pipeline
-- [ ] Migrate from SQLite to Azure Cosmos DB
+- [x] Full session history and transcript retrieval
+- [x] API key protection
+- [x] IP-based rate limiting
 - [ ] Azure Service Bus integration for async processing
 - [ ] Azure Functions queue consumer
 - [ ] Azure App Service deployment
-- [ ] API key protection for OpenAI endpoint
-- [ ] Session history and retrieval by user
+- [ ] Per-user session scoping
 
 ---
 
 ## About
 
-Built as a portfolio project to demonstrate Staff-level distributed systems design. The architecture intentionally explores real-world patterns, async messaging, multi-turn AI context management, and a clean layered .NET API rather than a simple request/response AI wrapper. Defaults to Azure recommendations but suggests whatever platform and technology best fits the user's needs.
+Built as a portfolio project to demonstrate Staff/Architect-level distributed systems design. The architecture explores real-world patterns including multi-turn AI context management, NoSQL document modelling, layered .NET solution structure, and a clean API contract, rather than a simple prompt/response AI wrapper.
 
-**Related:** [app-architect-ai-ui](https://github.com/kalleyne87/app-architect-ai-ui) — Angular 19 frontend with NgRx Signal Store
+**Frontend:** [app-architect-ai-ui](https://github.com/kalleyne87/app-architect-ai-ui) — Angular 22 · NgRx Signal Store · Standalone Components

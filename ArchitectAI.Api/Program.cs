@@ -72,8 +72,9 @@ app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/api/Assessments"))
     {
+        var apiKey = builder.Configuration["ApiSettings:AppArchitectAIKey2026"];
         var key = context.Request.Headers["X-Api-Key"].FirstOrDefault();
-        if (key != "architect-ai-2026-kb")
+        if (key != apiKey)
         {
             context.Response.StatusCode = 401;
             return;

@@ -56,6 +56,23 @@ namespace ArchitectAI.Business.Services
             }
         }
 
+        public async Task<List<AssessmentSession>> GetAllSessionsAsync()
+        {
+            var query = _sessionsContainer.GetItemQueryIterator<AssessmentSession>(
+                "SELECT * FROM c ORDER BY c.createdDateTime DESC"
+            );
+
+            var results = new List<AssessmentSession>();
+
+            while (query.HasMoreResults)
+            {
+                var page = await query.ReadNextAsync();
+                results.AddRange(page);
+            }
+
+            return results;
+        }
+
         public async Task<AssessmentSession> UpdateSessionAsync(AssessmentSession session)
         {
             session.UpdatedDateTime = DateTime.UtcNow;
