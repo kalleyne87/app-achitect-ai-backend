@@ -18,7 +18,7 @@ namespace ArchitectAI.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetAssessmentById(int id)
+        public async Task<IActionResult> GetAssessmentById(string id)
         {
             var assessment = await _assessmentService.GetAssessmentById(id);
 
@@ -51,6 +51,27 @@ namespace ArchitectAI.Api.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        [HttpGet("sessions/{id}")]
+        public async Task<IActionResult> GetSession(string id)
+        {
+            try
+            {
+                var session = await _assessmentService.GetSessionById(id);
+                return Ok(session);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("sessions")]
+        public async Task<IActionResult> GetSessions()
+        {
+            var sessions = await _assessmentService.GetAllSessions();
+            return Ok(sessions);
         }
     }
 }

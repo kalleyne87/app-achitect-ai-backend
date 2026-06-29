@@ -2,4 +2,8 @@ bin
 obj
 Properties
 .DS_Store
-AppAssessment.Api/appsettings.json
+*appsettings.json
+*appsettings.development.json
+*.db
+*.db-shm
+*.db-wal
