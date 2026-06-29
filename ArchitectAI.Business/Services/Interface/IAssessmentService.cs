@@ -15,5 +15,7 @@ namespace ArchitectAI.Business.Services.Interface
         Task<string> BuildConsolidatedPrompt(string originalRequest, List<QuestionAnswer> qa);
         Task<AssessmentResponse> GenerateFinalAssessment(string consolidatedPrompt);
         Task PersistFinalAssessment(AssessmentResponse response, string originalRequest, string sessionId);
+        Task<AssessmentSession> GetSessionById(string id);
+        Task<List<SessionSummaryResponse>> GetAllSessions();
     }
 }

@@ -8,6 +8,7 @@ namespace ArchitectAI.Business.Services.Interface
         Task<AssessmentSession> CreateSessionAsync(AssessmentSession session);
         Task<AssessmentSession?> GetSessionAsync(string id);
         Task<AssessmentSession> UpdateSessionAsync(AssessmentSession session);
+        Task<List<AssessmentSession>> GetAllSessionsAsync();
 
         // Assessments
         Task<Assessment> CreateAssessmentAsync(Assessment assessment);

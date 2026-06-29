@@ -245,11 +245,11 @@ API will be available at `http://localhost:5197`.
 - [x] Assessment session persistence
 - [x] Final assessment generation and storage
 - [x] AutoMapper DTO/DBO pipeline
-- [ ] Migrate from SQLite to Azure Cosmos DB
+- [x] Migrate from SQLite to Azure Cosmos DB
+- [x] API key protection for OpenAI endpoint
 - [ ] Azure Service Bus integration for async processing
 - [ ] Azure Functions queue consumer
 - [ ] Azure App Service deployment
-- [ ] API key protection for OpenAI endpoint
 - [ ] Session history and retrieval by user
 
 ---

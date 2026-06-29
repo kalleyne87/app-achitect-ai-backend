@@ -443,6 +443,25 @@ namespace ArchitectAI.Business.Services
                 ?? throw new InvalidOperationException("AI returned an invalid assessment response.");
         }
 
+        public async Task<AssessmentSession> GetSessionById(string id)
+        {
+            return await _cosmosDbService.GetSessionAsync(id)
+                ?? throw new KeyNotFoundException($"Session {id} not found.");
+        }
+
+        public async Task<List<SessionSummaryResponse>> GetAllSessions()
+        {
+            var sessions = await _cosmosDbService.GetAllSessionsAsync();
+
+            return sessions.Select(s => new SessionSummaryResponse
+            {
+                Id = s.Id,
+                OriginalRequest = s.OriginalRequest,
+                Status = s.Status,
+                CreatedDateTime = s.CreatedDateTime
+            }).ToList();
+        }
+
         private ChatClient BuildChatClient()
         {
             var azureClient = new AzureOpenAIClient(
