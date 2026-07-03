@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using ArchitectAI.DomainObjects.DTOs;
 using ArchitectAI.DomainObjects.DBOs;
 using ArchitectAI.Business.Services.Interface;
+using ArchitectAI.Business.Options;
 
 namespace ArchitectAI.Business.Services
 {
@@ -15,6 +16,7 @@ namespace ArchitectAI.Business.Services
     {
         private readonly AzureOpenAIOptions _options;
         private readonly ICosmosDbService _cosmosDbService;
+        private readonly IServiceBusPublisher _serviceBusPublisher;
         private readonly IMapper _mapper;
         private readonly ILogger<AssessmentService> _logger;
 
@@ -24,11 +26,13 @@ namespace ArchitectAI.Business.Services
         public AssessmentService(
             IOptions<AzureOpenAIOptions> options,
             ICosmosDbService cosmosDbService,
+            IServiceBusPublisher serviceBusPublisher,
             IMapper mapper,
             ILogger<AssessmentService> logger)
         {
             _options  = options.Value;
             _cosmosDbService = cosmosDbService;
+            _serviceBusPublisher = serviceBusPublisher;
             _mapper   = mapper;
             _logger   = logger;
         }
@@ -104,20 +108,22 @@ namespace ArchitectAI.Business.Services
 
             try
             {
-                var readiness = await ValidateAssessmentRequest(
-                    request.Requirements,
-                    new List<QuestionAnswer>());
-
-                await UpdateAssessmentSession(session, readiness);
-
-                if (!readiness.IsReadyForAssessment)
+                // Enqueue the request — processing happens in the Azure Function
+                await _serviceBusPublisher.PublishAssessmentRequestAsync(new AssessmentQueueMessage
                 {
-                    _logger.LogInformation("Session {Id}: needs more information.", session.Id);
-                    return BuildPendingResponse(session.Id, session.Status, readiness);
-                }
+                    SessionId    = session.Id,
+                    Requirements = request.Requirements
+                });
 
-                _logger.LogInformation("Session {Id}: ready for assessment.", session.Id);
-                return await FinalizeSession(session, request.Requirements);
+                // Return immediately with the session ID so the client can start polling
+                return new AssessmentSessionResponse
+                {
+                    SessionId            = session.Id,
+                    Status               = "Queued",
+                    IsReadyForAssessment = false,
+                    NextQuestions        = new List<string>(),
+                    MissingInformationAreas = new List<string>()
+                };
             }
             catch (Exception ex)
             {
@@ -179,7 +185,22 @@ namespace ArchitectAI.Business.Services
                 }
 
                 _logger.LogInformation("Session {Id}: ready for final assessment.", session.Id);
-                return await FinalizeSession(session, consolidatedPrompt);
+
+                // Enqueue the final assessment request for processing
+                await _serviceBusPublisher.PublishAssessmentRequestAsync(new AssessmentQueueMessage
+                {
+                    SessionId = session.Id,
+                    Requirements = session.ConsolidatedPrompt ?? session.OriginalRequest
+                });
+
+                return new AssessmentSessionResponse
+                {
+                    SessionId = session.Id,
+                    Status = "Queued",
+                    IsReadyForAssessment = false,
+                    NextQuestions = new List<string>(),
+                    MissingInformationAreas = new List<string>()
+                };
             }
             catch (Exception ex)
             {

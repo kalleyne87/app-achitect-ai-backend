@@ -272,7 +272,7 @@ Swagger UI available at `http://localhost:5197/swagger` in development.
 - [x] Full session history and transcript retrieval
 - [x] API key protection
 - [x] IP-based rate limiting
-- [ ] Azure Service Bus integration for async processing
+- [x] Azure Service Bus integration for async processing
 - [ ] Azure Functions queue consumer
 - [ ] Azure App Service deployment
 - [ ] Per-user session scoping
