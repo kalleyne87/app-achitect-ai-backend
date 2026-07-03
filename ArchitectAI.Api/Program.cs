@@ -1,7 +1,7 @@
 using ArchitectAI.Business.Mappers;
+using ArchitectAI.Business.Options;
 using ArchitectAI.Business.Services;
 using ArchitectAI.Business.Services.Interface;
-using ArchitectAI.DomainObjects.DTOs;
 using AspNetCoreRateLimit;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,13 +14,20 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IAssessmentService, AssessmentService>();
 builder.Services.AddSingleton<ICosmosDbService, CosmosDbService>();
+builder.Services.AddSingleton<IServiceBusPublisher, ServiceBusPublisher>();
 
 // Configure Azure OpenAI options
 builder.Services.Configure<AzureOpenAIOptions>(
     builder.Configuration.GetSection("AzureOpenAI"));
 
+// Configure Cosmos DB options
 builder.Services.Configure<CosmosDbOptions>(
     builder.Configuration.GetSection(CosmosDbOptions.SectionName));
+
+// Configure Service Bus options
+builder.Services.Configure<ServiceBusOptions>(
+    builder.Configuration.GetSection(ServiceBusOptions.SectionName));
+
 
 // AutoMapper configuration
 builder.Services.AddAutoMapper(typeof(AssessmentProfile));

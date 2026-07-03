@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ArchitectAI.Api/ArchitectAI.Api.csproj" />
+  <Project Path="ArchitectAI.Business/ArchitectAI.Business.csproj" />
+  <Project Path="ArchitectAI.DomainObjects/ArchitectAI.DomainObjects.csproj" />
+</Solution>
