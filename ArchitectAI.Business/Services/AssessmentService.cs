@@ -108,6 +108,25 @@ namespace ArchitectAI.Business.Services
 
             try
             {
+                var readiness = await ValidateAssessmentRequest(
+                    request.Requirements,
+                    session.CollectedQuestionsAndAnswers);
+        
+                await UpdateAssessmentSession(session, readiness);
+
+                if (!readiness.IsReadyForAssessment)
+                {
+                    _logger.LogInformation("Session {Id}: needs more information.", session.Id);
+                    return new AssessmentSessionResponse
+                    {
+                        SessionId = session.Id,
+                        Status = session.Status,
+                        IsReadyForAssessment = false,
+                        NextQuestions = readiness.NextQuestions,
+                        MissingInformationAreas = readiness.MissingInformationAreas
+                    };
+                }
+
                 // Enqueue the request — processing happens in the Azure Function
                 await _serviceBusPublisher.PublishAssessmentRequestAsync(new AssessmentQueueMessage
                 {
@@ -312,19 +331,37 @@ namespace ArchitectAI.Business.Services
 
             var assessmentReadinessJson = """
                 {
+                    "mentionedScale": false,
+                    "mentionedPlatform": false,
+                    "mentionedCoreFeatures": false,
                     "isReadyForAssessment": false,
                     "missingInformationAreas": [],
                     "nextQuestions": []
                 }
                 """;
 
+            var assessmentReadinessExample = """ 
+                {
+                    "mentionedScale": false,
+                    "mentionedPlatform": false,
+                    "mentionedCoreFeatures": false,
+                    "isReadyForAssessment": false,
+                    "missingInformationAreas": ["scale", "platform", "core features"],
+                    "nextQuestions": [
+                        "About how many people do you expect to use this at the same time?",
+                        "Does this need to work on phones, computers, or both?",
+                        "What are the two or three most important things people should be able to do with it?"
+                    ]
+                }           
+            """;
+
             var messages = new List<ChatMessage>
             {
                 ChatMessage.CreateSystemMessage(
                     $"""
                     You are a friendly assistant helping someone plan a software system.
-                    Your job is to decide whether you have enough information to produce
-                    a solid architecture recommendation for them.
+                    Your job is to decide whether you have enough concrete detail to produce
+                    a solid, specific architecture recommendation.
 
                     {priorQuestionsBlock}
 
@@ -332,25 +369,41 @@ namespace ArchitectAI.Business.Services
 
                     {assessmentReadinessJson}
 
+                    You must fill in mentionedScale, mentionedPlatform, and mentionedCoreFeatures
+                    first, based only on what the user actually said — not what you'd assume by
+                    default. Then set isReadyForAssessment based on those three answers:
+
+                    - mentionedScale: did they give any sense of how many people will use this
+                    (even roughly, like "a few hundred" or "everyone in my company")?
+                    - mentionedPlatform: did they say what it needs to run on (phones,
+                    computers, or both)?
+                    - mentionedCoreFeatures: did they describe what the system actually needs
+                    to do, beyond just naming a category? "A messaging app" alone does NOT
+                    count — "a messaging app for coordinating deliveries between drivers and
+                    dispatch" does.
+
                     Rules:
-                    - Be generous in your assessment. If the user has described a recognisable
-                      system type (e.g. messaging app, e-commerce platform, ride-sharing service),
-                      that alone is often enough to produce a solid recommendation.
-                    - Set isReadyForAssessment to true unless critical information is genuinely
-                      missing and would significantly change the architecture decisions.
-                    - When true, missingInformationAreas and nextQuestions must be empty arrays.
-                    - When false, ask a MAXIMUM of 3 questions — only the ones that would most
-                      change the recommendation. Do not ask nice-to-have questions.
+                    - isReadyForAssessment can only be true if ALL THREE of the above are true.
+                    If even one is false, isReadyForAssessment must be false.
+                    - When false, ask a MAXIMUM of 3 questions — prioritize whichever of the
+                    three areas above are still missing. Do not ask nice-to-have questions.
                     - Across the entire conversation, never ask more than 10 questions total.
-                      If {previousQA.Count} questions have already been asked, be strongly biased
-                      toward isReadyForAssessment = true.
+                    If {previousQA.Count} questions have already been asked, be strongly
+                    biased toward isReadyForAssessment = true even if one area is still thin —
+                    make a reasonable assumption rather than asking forever.
                     - Do NOT repeat any previously asked question.
-                    - Write every question as if you are talking to a business owner, not an engineer.
-                      Avoid ALL technical terms — no mention of APIs, databases, latency, SLAs,
-                      CDNs, OAuth, WebRTC, encryption protocols, or infrastructure terms.
+                    - Write every question as if you are talking to a business owner, not an
+                    engineer. Avoid ALL technical terms — no mention of APIs, databases,
+                    latency, SLAs, CDNs, OAuth, WebRTC, encryption protocols, or
+                    infrastructure terms.
                     - Each question must be one plain sentence a non-technical person can answer.
-                    - Good example: "How many people do you expect to use this at the same time?"
-                    - Bad example: "What are your peak concurrent user targets and SLA requirements?"
+
+                    Example:
+                    User says: "Design a messenger app similar to Facebook Messenger"
+                    This names a category but gives zero information on scale, platform, or
+                    features — a correct response would be:
+                    
+                    {assessmentReadinessExample}
                     """
                 ),
 
