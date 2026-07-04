@@ -1,9 +1,9 @@
 using ArchitectAI.Business.Services.Interface;
 using ArchitectAI.DomainObjects.DBOs;
-using ArchitectAI.DomainObjects.DTOs;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Cosmos;
+using ArchitectAI.Business.Options;
 
 
 namespace ArchitectAI.Business.Services

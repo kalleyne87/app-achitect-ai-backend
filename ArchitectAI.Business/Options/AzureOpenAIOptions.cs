@@ -1,4 +1,4 @@
-namespace ArchitectAI.DomainObjects.DTOs
+namespace ArchitectAI.Business.Options
 {
     public class AzureOpenAIOptions
     {
