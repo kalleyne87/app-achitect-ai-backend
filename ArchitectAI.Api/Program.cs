@@ -28,6 +28,19 @@ builder.Services.Configure<CosmosDbOptions>(
 builder.Services.Configure<ServiceBusOptions>(
     builder.Configuration.GetSection(ServiceBusOptions.SectionName));
 
+// CORS — allow the deployed Angular frontend (and local dev) to call this API
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+                "https://calm-sky-02c24140f.7.azurestaticapps.net",
+                "http://localhost:4200"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 // AutoMapper configuration
 builder.Services.AddAutoMapper(typeof(AssessmentProfile));
@@ -70,6 +83,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowFrontend");
+
 app.UseAuthorization();
 
 app.MapControllers();
@@ -77,6 +92,12 @@ app.MapControllers();
 // Apply a header key
 app.Use(async (context, next) =>
 {
+    if (context.Request.Method == HttpMethods.Options)
+    {
+        await next();
+        return;
+    }
+
     if (context.Request.Path.StartsWithSegments("/api/Assessments"))
     {
         var apiKey = builder.Configuration["ApiSettings:AppArchitectAIKey2026"];
