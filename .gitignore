@@ -7,3 +7,6 @@ Properties
 *.db
 *.db-shm
 *.db-wal
+.env.docker
+Dockerfile
+.dockerignore
